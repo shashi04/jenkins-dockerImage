@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/your-repo.git'  // Change to your actual repo
+                git 'https://github.com/shashi04/jenkins-dockerImage'  // Change to your actual repo
             }
         }
 
