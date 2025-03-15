@@ -48,8 +48,6 @@ pipeline {
                         sh """
                         ssh -o StrictHostKeyChecking=no -i $SSH_KEY $TARGET_EC2_USER@$TARGET_EC2_HOST << 'EOF'
                         docker pull $DOCKER_IMAGE
-                        docker stop my_container || true
-                        docker rm -f my_container || true
                         docker run -d --name my_container -p 80:5000 $DOCKER_IMAGE
                         EOF
                         """
