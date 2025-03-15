@@ -69,28 +69,27 @@ pipeline {
     post {
         always {
             script {
-                sh "docker logout"
+                def emailSubject
+                def emailBody
+                def recipientEmail
+
+                if (currentBuild.result == "SUCCESS") {
+                    emailSubject = "Pipeline Success: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}"
+                    emailBody = "The pipeline run for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER} was successful. You can view the details at ${env.BUILD_URL}"
+                    recipientEmail = "shashivardhan04@gmail.com"
+                }
+                else {
+                    emailSubject = "Pipeline Failure: ${env.JOB_NAME} - Build #${env.BUILD_NUMBER}"
+                    emailBody = "The pipeline run for ${env.JOB_NAME} - Build #${env.BUILD_NUMBER} has failed. You can view the details at ${env.BUILD_URL}"
+                    recipientEmail = "shashivardhan04@gmail.com"
+                }
+
+                emailext (
+                    subject: emailSubject,
+                    body: emailBody,
+                    to: recipientEmail
+                )
             }
-        }
-
-        success {
-            emailext (
-                to: 'shashivardhan04@gmail.com',
-                subject: "✅ Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """<p>Good job! The build <b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> was successful.</p>
-                         <p>Check logs: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>""",
-                mimeType: 'text/html'
-            )
-        }
-
-        failure {
-            emailext (
-                to: 'shashivardhan04@gmail.com',
-                subject: "❌ Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """<p>The build <b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> has failed.</p>
-                         <p>Please check Jenkins logs: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>""",
-                mimeType: 'text/html'
-            )
         }
     }
 }
