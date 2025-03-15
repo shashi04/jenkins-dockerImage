@@ -5,7 +5,7 @@ pipeline {
         DOCKER_IMAGE = "shashivar04/python-app:latest"
         TARGET_EC2_USER = "ubuntu"
         TARGET_EC2_HOST = "172.31.3.12"
-        SSH_KEY_PATH = "~/.ssh/id_rsa"
+        SSH_KEY_PATH = "$HOME/.ssh/id_rsa"
     }
 
     stages {
@@ -26,7 +26,9 @@ pipeline {
         stage('Login to DockerHub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                    sh """
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    """
                 }
             }
         }
@@ -35,22 +37,23 @@ pipeline {
             steps {
                 script {
                     sh "docker push $DOCKER_IMAGE"
-                    sh "docker logout"
                 }
             }
         }
 
         stage('Deploy to EC2') {
             steps {
-                sshagent(credentials: ['ec2-ssh-credentials']) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no -i $SSH_KEY_PATH $TARGET_EC2_USER@$TARGET_EC2_HOST << 'EOF'
-                    docker pull $DOCKER_IMAGE
-                    docker stop my_container || true
-                    docker rm -f my_container || true
-                    docker run -d --name my_container -p 80:5000 $DOCKER_IMAGE
-                    EOF
-                    '''
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-credentials', keyFileVariable: 'SSH_KEY')]) {
+                        sh """
+                        ssh -o StrictHostKeyChecking=no -i $SSH_KEY $TARGET_EC2_USER@$TARGET_EC2_HOST << 'EOF'
+                        docker pull $DOCKER_IMAGE
+                        docker stop my_container || true
+                        docker rm -f my_container || true
+                        docker run -d --name my_container -p 80:5000 $DOCKER_IMAGE
+                        EOF
+                        """
+                    }
                 }
             }
         }
@@ -58,27 +61,35 @@ pipeline {
         stage('Cleanup') {
             steps {
                 script {
-                    sh "docker rmi $DOCKER_IMAGE"
+                    sh "docker rmi $DOCKER_IMAGE || true"
                 }
             }
         }
-    }  
-    post {  
+    }
+
+    post {
+        always {
+            script {
+                sh "docker logout"
+            }
+        }
+
         success {
             emailext (
                 to: 'shashivardhan04@gmail.com',
-                subject: "Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """Good job! The build ${env.JOB_NAME} #${env.BUILD_NUMBER} was successful. 
-                Check logs: ${env.BUILD_URL}""",
+                subject: "✅ Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """<p>Good job! The build <b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> was successful.</p>
+                         <p>Check logs: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>""",
                 mimeType: 'text/html'
             )
         }
+
         failure {
             emailext (
                 to: 'shashivardhan04@gmail.com',
-                subject: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """The build ${env.JOB_NAME} #${env.BUILD_NUMBER} has failed. 
-                Please check Jenkins logs: ${env.BUILD_URL}""",
+                subject: "❌ Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """<p>The build <b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> has failed.</p>
+                         <p>Please check Jenkins logs: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>""",
                 mimeType: 'text/html'
             )
         }
