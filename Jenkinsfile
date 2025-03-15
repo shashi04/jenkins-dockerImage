@@ -40,20 +40,20 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2') {
-            steps {
-                sshagent(credentials: ['ec2-ssh-credentials']) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no -i $SSH_KEY_PATH $TARGET_EC2_USER@$TARGET_EC2_HOST << 'EOF'
-                    docker pull $DOCKER_IMAGE
-                    docker stop my_container || true
-                    docker rm -f my_container || true
-                    docker run -d --name my_container -p 80:5000 $DOCKER_IMAGE
-                    EOF
-                    '''
-                }
-            }
-        }
+        // stage('Deploy to EC2') {
+        //     steps {
+        //         sshagent(credentials: ['ec2-ssh-credentials']) {
+        //             sh '''
+        //             ssh -o StrictHostKeyChecking=no -i $SSH_KEY_PATH $TARGET_EC2_USER@$TARGET_EC2_HOST << 'EOF'
+        //             docker pull $DOCKER_IMAGE
+        //             docker stop my_container || true
+        //             docker rm -f my_container || true
+        //             docker run -d --name my_container -p 80:5000 $DOCKER_IMAGE
+        //             EOF
+        //             '''
+        //         }
+        //     }
+        // }
 
         stage('Cleanup') {
             steps {
