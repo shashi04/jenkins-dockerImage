@@ -69,7 +69,8 @@ pipeline {
                 to: 'shashivardhan04@gmail.com',
                 subject: "Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """Good job! The build ${env.JOB_NAME} #${env.BUILD_NUMBER} was successful. 
-                Check logs: ${env.BUILD_URL}"""
+                Check logs: ${env.BUILD_URL}""",
+                mimeType: 'text/html'
             )
         }
         failure {
@@ -77,7 +78,8 @@ pipeline {
                 to: 'shashivardhan04@gmail.com',
                 subject: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """The build ${env.JOB_NAME} #${env.BUILD_NUMBER} has failed. 
-                Please check Jenkins logs: ${env.BUILD_URL}"""
+                Please check Jenkins logs: ${env.BUILD_URL}""",
+                mimeType: 'text/html'
             )
         }
     }
